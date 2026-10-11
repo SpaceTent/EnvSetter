@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: envvault-data
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        - name: envvault-token
+          secret:
+            secretName: envvault-token
+            defaultMode: 0400
+        - name: envvault-key
+          secret:
+            secretName: envvault-key
+            defaultMode: 0400
+      initContainers:
+        - name: envvault-pull
+          image: ghcr.io/spacetent/envsetter:REPLACE_WITH_VERSION
+          args:
+            - pull
+            - --token-file
+            - /run/credentials/token
+            - --key-file
+            - /run/credentials/key
+            - --output
+            - /run/envvault/.env
+          envFrom:
+            - configMapRef:
+                name: envvault-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: envvault-data
+              mountPath: /run/envvault
+            - name: envvault-token
+              mountPath: /run/credentials/token
+              subPath: token
+              readOnly: true
+            - name: envvault-key
+              mountPath: /run/credentials/key
+              subPath: key
+              readOnly: true
+      containers:
+        - name: app
+          image: ghcr.io/example/application:REPLACE_WITH_VERSION
+          env:
+            - name: DOTENV_PATH
+              value: /run/envvault/.env
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: envvault-data
+              mountPath: /run/envvault
+              readOnly: true

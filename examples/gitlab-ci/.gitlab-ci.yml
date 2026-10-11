@@ -1,0 +1,8 @@
+envvault-test:
+  image: golang:1.24-alpine
+  variables:
+    ENVVAULT_URL: https://www.envvault.net
+  before_script:
+    - go install github.com/SpaceTent/EnvSetter/cmd/envsetter@latest
+  script:
+    - envsetter run -- go test ./...

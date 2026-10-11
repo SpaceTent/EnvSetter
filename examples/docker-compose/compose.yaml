@@ -1,0 +1,22 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: examples/docker-compose/Dockerfile
+    environment:
+      ENVVAULT_URL: ${ENVVAULT_URL:-https://www.envvault.net}
+      ENVVAULT_VAULT: ${ENVVAULT_VAULT:?set ENVVAULT_VAULT}
+      ENVVAULT_SECRET: ${ENVVAULT_SECRET:?set ENVVAULT_SECRET}
+    secrets:
+      - source: envvault_token
+        target: envvault_token
+        mode: 0400
+      - source: envvault_key
+        target: envvault_key
+        mode: 0400
+
+secrets:
+  envvault_token:
+    file: ${ENVVAULT_TOKEN_FILE:-./secrets/token}
+  envvault_key:
+    file: ${ENVVAULT_KEY_FILE:-./secrets/key}

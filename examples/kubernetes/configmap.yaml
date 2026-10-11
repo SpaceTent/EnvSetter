@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envvault-config
+data:
+  ENVVAULT_URL: https://www.envvault.net
+  ENVVAULT_VAULT: my-vault
+  ENVVAULT_SECRET: production-api

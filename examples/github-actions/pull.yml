@@ -1,0 +1,29 @@
+name: EnvVault example
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+
+      - name: Install EnvSetter
+        run: go install github.com/SpaceTent/EnvSetter/cmd/envsetter@latest
+
+      - name: Run tests with EnvVault variables
+        env:
+          ENVVAULT_URL: https://www.envvault.net
+          ENVVAULT_VAULT: ${{ vars.ENVVAULT_VAULT }}
+          ENVVAULT_SECRET: ${{ vars.ENVVAULT_SECRET }}
+          ENVVAULT_TOKEN: ${{ secrets.ENVVAULT_TOKEN }}
+          ENVVAULT_KEY: ${{ secrets.ENVVAULT_KEY }}
+        run: envsetter run -- go test ./...

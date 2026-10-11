@@ -1,0 +1,27 @@
+[Unit]
+Description=Example application with EnvVault configuration
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=example-app
+Group=example-app
+RuntimeDirectory=example-app
+RuntimeDirectoryMode=0700
+Environment=ENVVAULT_URL=https://www.envvault.net
+Environment=ENVVAULT_VAULT=my-vault
+Environment=ENVVAULT_SECRET=production-api
+Environment=DOTENV_PATH=/run/example-app/.env
+LoadCredential=envvault-token:/etc/envvault/example-app.token
+LoadCredential=envvault-key:/etc/envvault/example-app.key
+ExecStartPre=/usr/local/bin/envsetter pull --token-file ${CREDENTIALS_DIRECTORY}/envvault-token --key-file ${CREDENTIALS_DIRECTORY}/envvault-key --output /run/example-app/.env --force
+ExecStart=/usr/local/bin/example-app
+ExecStopPost=/usr/bin/rm -f /run/example-app/.env
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target
