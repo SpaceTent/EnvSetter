@@ -60,7 +60,7 @@ test:
 run:
 	@go run .
 
-lint:
+lint: test
 	@go fmt ./...
 	@go vet ./...
 	@goimports -w .
