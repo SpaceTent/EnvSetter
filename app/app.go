@@ -42,16 +42,16 @@ The token is sent as an Authorization header. The decryption key never leaves th
 // Run executes the CLI and returns a process exit code.
 func Run(args []string, stdout, stderr io.Writer, version string) int {
 	if len(args) == 0 {
-		fmt.Fprint(stderr, usage)
+		_, _ = fmt.Fprint(stderr, usage)
 		return 2
 	}
 
 	switch args[0] {
 	case "help", "-h", "--help":
-		fmt.Fprint(stdout, usage)
+		_, _ = fmt.Fprint(stdout, usage)
 		return 0
 	case "version", "--version":
-		fmt.Fprintln(stdout, version)
+		_, _ = fmt.Fprintln(stdout, version)
 		return 0
 	case "pull":
 		return runPull(args[1:], stdout, stderr)
@@ -64,7 +64,7 @@ func Run(args []string, stdout, stderr io.Writer, version string) int {
 				secret: args[1],
 			}, args[2], false)
 		}
-		fmt.Fprintf(stderr, "envsetter: unknown command %q\n\n%s", args[0], usage)
+		_, _ = fmt.Fprintf(stderr, "envsetter: unknown command %q\n\n%s", args[0], usage)
 		return 2
 	}
 }
@@ -101,16 +101,16 @@ func runPull(args []string, stdout, stderr io.Writer) int {
 	fs.StringVar(&output, "output", "", "destination .env file")
 	fs.StringVar(&output, "o", "", "destination .env file")
 	fs.BoolVar(&force, "force", false, "replace an existing destination")
-	fs.Usage = func() { fmt.Fprint(stderr, usage) }
+	fs.Usage = func() { _, _ = fmt.Fprint(stderr, usage) }
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
 	if fs.NArg() != 0 {
-		fmt.Fprintln(stderr, "envsetter: pull does not accept positional arguments")
+		_, _ = fmt.Fprintln(stderr, "envsetter: pull does not accept positional arguments")
 		return 2
 	}
 	if output == "" {
-		fmt.Fprintln(stderr, "envsetter: pull requires --output")
+		_, _ = fmt.Fprintln(stderr, "envsetter: pull requires --output")
 		return 2
 	}
 	return pull(stdout, stderr, options, output, force)
@@ -119,19 +119,19 @@ func runPull(args []string, stdout, stderr io.Writer) int {
 func pull(stdout, stderr io.Writer, options commonOptions, output string, force bool) int {
 	clientOptions, err := options.clientOptions()
 	if err != nil {
-		fmt.Fprintf(stderr, "envsetter: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "envsetter: %v\n", err)
 		return 1
 	}
 	plain, err := envvaultclient.Fetch(context.Background(), clientOptions)
 	if err != nil {
-		fmt.Fprintf(stderr, "envsetter: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "envsetter: %v\n", err)
 		return 1
 	}
 	if err := writeSecretFile(output, plain, force); err != nil {
-		fmt.Fprintf(stderr, "envsetter: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "envsetter: %v\n", err)
 		return 1
 	}
-	fmt.Fprintf(stdout, "wrote %s\n", output)
+	_, _ = fmt.Fprintf(stdout, "wrote %s\n", output)
 	return 0
 }
 
@@ -140,24 +140,24 @@ func runCommand(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	var options commonOptions
 	addCommonFlags(fs, &options)
-	fs.Usage = func() { fmt.Fprint(stderr, usage) }
+	fs.Usage = func() { _, _ = fmt.Fprint(stderr, usage) }
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
 	command := fs.Args()
 	if len(command) == 0 {
-		fmt.Fprintln(stderr, "envsetter: run requires a command after --")
+		_, _ = fmt.Fprintln(stderr, "envsetter: run requires a command after --")
 		return 2
 	}
 
 	clientOptions, err := options.clientOptions()
 	if err != nil {
-		fmt.Fprintf(stderr, "envsetter: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "envsetter: %v\n", err)
 		return 1
 	}
 	vars, err := envvaultclient.Load(context.Background(), clientOptions)
 	if err != nil {
-		fmt.Fprintf(stderr, "envsetter: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "envsetter: %v\n", err)
 		return 1
 	}
 
@@ -171,7 +171,7 @@ func runCommand(args []string, stdout, stderr io.Writer) int {
 		if errors.As(err, &exitErr) {
 			return exitErr.ExitCode()
 		}
-		fmt.Fprintf(stderr, "envsetter: starting command: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "envsetter: starting command: %v\n", err)
 		return 1
 	}
 	return 0
@@ -254,7 +254,7 @@ func writeSecretFile(path string, contents []byte, force bool) error {
 		return fmt.Errorf("create temporary file: %w", err)
 	}
 	tempPath := temp.Name()
-	defer os.Remove(tempPath)
+	defer func() { _ = os.Remove(tempPath) }()
 	if err := temp.Chmod(0600); err != nil {
 		_ = temp.Close()
 		return fmt.Errorf("secure temporary file: %w", err)
