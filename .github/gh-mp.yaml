@@ -1,0 +1,52 @@
+name: Build and Push image to GitHub
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  IMAGE_NAME: envsetter
+  REGISTRY: ghcr.io
+  TAG: ${{ github.sha }}
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Log in to the GitHub Container Registry
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: set lower case owner name
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
+          VERSION=$(git describe --tags --abbrev=0)
+          echo "VERSION=${VERSION}" >>${GITHUB_ENV}
+        env:
+          OWNER: '${{ github.repository_owner }}'
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+            platforms: linux/amd64,linux/arm64
+            push: true
+            tags: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+            build-args: |
+              VERSION=${{ env.VERSION }}
